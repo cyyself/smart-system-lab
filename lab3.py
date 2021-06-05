@@ -165,7 +165,7 @@ def counting():
         ticks = dpm.ticks
         speed = 0
         if ticks != 0 and dpm.sum_time != 0:
-            speed = round(100 / (dpm.sum_time / dpm.ticks))
+            speed = round(10 / (dpm.sum_time / dpm.ticks))
         db.insert_sensor_result(0,ticks)
         dpm.stat[0] = ticks
         db.insert_sensor_result(2,speed)
@@ -195,7 +195,7 @@ def counting():
         ticks = dpm.ticks
         speed = 0
         if ticks != 0 and dpm.sum_time != 0:
-            speed = round(100 / (dpm.sum_time / dpm.ticks))
+            speed = round(10 / (dpm.sum_time / dpm.ticks))
         db.insert_sensor_result(1,ticks)
         dpm.stat[1] = ticks
         db.insert_sensor_result(3,speed)
