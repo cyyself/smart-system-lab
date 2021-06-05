@@ -47,19 +47,19 @@ def init_fuzzy_knowledge(): # 初始化模糊知识
     # 添加模糊集元素
     # 1-车流量小
     fm.insert_fuzzy_element(1,0,"车流量0",1)
-    fm.insert_fuzzy_element(1,20,"车流量20",1)
+    fm.insert_fuzzy_element(1,20,"车流量20",0.5)
     fm.insert_fuzzy_element(1,40,"车流量40",0)
     fm.insert_fuzzy_element(1,80,"车流量80",0)
     # 2-车流量适中
     fm.insert_fuzzy_element(2,0,"车流量0",0)
-    fm.insert_fuzzy_element(2,20,"车流量20",0)
+    fm.insert_fuzzy_element(2,20,"车流量20",0.5)
     fm.insert_fuzzy_element(2,40,"车流量40",1)
-    fm.insert_fuzzy_element(2,60,"车流量60",0)
+    fm.insert_fuzzy_element(2,60,"车流量60",0.5)
     fm.insert_fuzzy_element(2,80,"车流量80",0)
     # 3-车流量大
     fm.insert_fuzzy_element(3,0,"车流量0",0)
     fm.insert_fuzzy_element(3,40,"车流量40",0)
-    fm.insert_fuzzy_element(3,60,"车流量60",1)
+    fm.insert_fuzzy_element(3,60,"车流量60",0.5)
     fm.insert_fuzzy_element(3,80,"车流量80",1)
     # 4-绿灯时间短
     fm.insert_fuzzy_element(4,10,"绿灯时间10s",1)
@@ -75,6 +75,8 @@ def init_fuzzy_knowledge(): # 初始化模糊知识
     fm.insert_fuzzy_element(6,30,"绿灯时间30s",1)
     # 7-车速小
     fm.insert_fuzzy_element(7,0,"车速0",1)
+    fm.insert_fuzzy_element(7,15,"车速15",0.5)
+    fm.insert_fuzzy_element(7,30,"车速30",0)
     fm.insert_fuzzy_element(7,45,"车速45",0)
     # 8-车速适中
     fm.insert_fuzzy_element(8,0,"车速0",0)
@@ -83,15 +85,17 @@ def init_fuzzy_knowledge(): # 初始化模糊知识
     fm.insert_fuzzy_element(8,45,"车速45",0)
     # 9-车速大
     fm.insert_fuzzy_element(9,0,"车速0",0)
+    fm.insert_fuzzy_element(9,15,"车速15",0)
+    fm.insert_fuzzy_element(9,30,"车速30",0.5)
     fm.insert_fuzzy_element(9,45,"车速45",1)
     # 10-黄灯时间短
     fm.insert_fuzzy_element(10,3,"黄灯时间3s",1)
     fm.insert_fuzzy_element(10,4,"黄灯时间4s",0.5)
     fm.insert_fuzzy_element(10,5,"黄灯时间5s",0)
     # 11-黄灯时间适中
-    fm.insert_fuzzy_element(11,3,"黄灯时间3s",0)
+    fm.insert_fuzzy_element(11,3,"黄灯时间3s",0.5)
     fm.insert_fuzzy_element(11,4,"黄灯时间4s",1)
-    fm.insert_fuzzy_element(11,5,"黄灯时间5s",0)
+    fm.insert_fuzzy_element(11,5,"黄灯时间5s",0.5)
     # 12-黄灯时间长
     fm.insert_fuzzy_element(12,3,"黄灯时间3s",0)
     fm.insert_fuzzy_element(12,4,"黄灯时间4s",0.5)
@@ -114,6 +118,7 @@ def test_fuzzy_matrix_cal():
 def db_init():
     init_credit_knowledge()
     init_fuzzy_knowledge()
+#db_init()
 """
 dpm = DownPosMachine(db)
 
@@ -133,30 +138,30 @@ class fuzzy_infer_machine:
         return min([max(x[i],y[i]) for i in range(len(x))])
     def dot_product(self,x,y): # 计算B' = D*R(A,B)的过程
         return [max([min(x[i],y[i][j]) for i in range(len(x))]) for j in range(len(y[0]))]
-    def infer_traffic(self,traffic,delta=3,explain=False):
-        knowledges_id = self.fm.get_knowledge_id_by_class(1)
+    def infer(self,class_id,input,delta=3,explain=False):
+        knowledges_id = self.fm.get_knowledge_id_by_class(class_id)
         knowledges = self.fm.get_fuzzy_knowledge()
         # 模糊化-预处理
-        traffic_range = self.fm.get_fuzzy_set_range(knowledges[knowledges_id[0]]['set_id_a'])
+        input_range = self.fm.get_fuzzy_set_range(knowledges[knowledges_id[0]]['set_id_a'])
         for x in knowledges_id:
-            assert self.fm.get_fuzzy_set_range(knowledges[x]['set_id_a']) == traffic_range, "fuzzy set range for traffic can't be different"
-        traffic_range = range(traffic_range[0],traffic_range[1]+1)
-        traffic_fuzzy_mtx = [0 for _ in traffic_range] # 将车流量模糊化的结果
+            assert self.fm.get_fuzzy_set_range(knowledges[x]['set_id_a']) == input_range, "fuzzy set range for input can't be different"
+        input_range = range(input_range[0],input_range[1]+1)
+        input_fuzzy_mtx = [0 for _ in input_range] # 将车流量模糊化的结果
         # 模糊化-三角法
         i = 0
-        for x in traffic_range:
-            if abs(x - traffic) <= delta:
-                traffic_fuzzy_mtx[i] = 1 - abs(traffic - x) / delta
+        for x in input_range:
+            if abs(x - input) <= delta:
+                input_fuzzy_mtx[i] = 1 - abs(input - x) / delta
             else:
-                traffic_fuzzy_mtx[i] = 0.0
+                input_fuzzy_mtx[i] = 0.0
             i += 1
         max_deg = 0
         max_deg_knowledge = -1
         # 计算贴近度
         for kid in knowledges_id:
             fuzzy_set = self.fm.get_fuzzy_set_by_id(knowledges[kid]['set_id_a'])
-            fuzzy_vector = [self.fm.get_fuzzy_set_y(fuzzy_set,x) for x in traffic_range]
-            deg = (self.inner_product(fuzzy_vector,traffic_fuzzy_mtx)+(1-self.outer_product(fuzzy_vector,traffic_fuzzy_mtx)))/2
+            fuzzy_vector = [self.fm.get_fuzzy_set_y(fuzzy_set,x) for x in input_range]
+            deg = (self.inner_product(fuzzy_vector,input_fuzzy_mtx)+(1-self.outer_product(fuzzy_vector,input_fuzzy_mtx)))/2
             if deg > max_deg:
                 max_deg = deg
                 max_deg_knowledge = kid
@@ -173,20 +178,21 @@ class fuzzy_infer_machine:
         set_id_b = knowledges[max_deg_knowledge]['set_id_b']
         fuzzy_mtx = self.fm.get_fuzzy_matrix(set_id_a,set_id_b,1,1)
         # 复合计算，B'=D*R(A,B)
-        result = self.dot_product(traffic_fuzzy_mtx,fuzzy_mtx)
+        result = self.dot_product(input_fuzzy_mtx,fuzzy_mtx)
         # 去模糊化-重心法
         result_range = self.fm.get_fuzzy_set_range(set_id_b)
         fz = sum([(result_range[0] + i)*result[i] for i in range(len(result))])
         fm = sum(result)
-        return fz / fm
-    
-    
+        return fz / fm 
         
 fim = fuzzy_infer_machine(db)
 
 
 for i in range(0,81):
-    print(fim.infer_traffic(i))
+    print(i,fim.infer(1,i))
+
+for i in range(0,46):
+    print(i,fim.infer(2,i))
 """
 class infer_machine:
     def __init__(self,db):
