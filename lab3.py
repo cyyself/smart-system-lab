@@ -149,7 +149,7 @@ cim.explain(cf_p)
 
 dpm = DownPosMachine()
 
-def counting():
+def running_thread():
     ns_green = 15
     we_green = 15
     ns_yellow = 3
@@ -216,4 +216,4 @@ def counting():
         dpm.set_we_yellow()
         time.sleep(we_yellow)
 
-counting()
+running_thread()
