@@ -1,34 +1,33 @@
 #!/usr/bin/env python3
 import time
-
 from fuzzy_manager import fuzzy_manager
 from credit_manager import credit_manager
 from DB import DB
 from DownPosMachine import DownPosMachine
+from infer_machine import fuzzy_infer_machine,credit_infer_machine
 
 db = DB()
 
 def init_credit_knowledge(): # 初始化可信度知识
     cm = credit_manager(db)
     # 添加前提
-    cm.insert_premise("下雨")
-    cm.insert_premise("下雪")
-    cm.insert_premise("下冰雹")
-    cm.insert_premise("晴天")
-    cm.insert_premise("风速等级大于5级")
-    cm.insert_premise("eval(F3&F7)#车速小 and 车流量大")
+    cm.insert_premise("下雨|下雪|大风") # 1
+    cm.insert_premise("恶劣天气") # 2
+    cm.insert_premise("车速小&车流量大") # 3
+    cm.insert_premise("可能发生事故") # 4
+    cm.insert_premise("高温") # 5
     # 添加结论
-    cm.insert_conclusion("红灯时间+5s")
-    cm.insert_conclusion("红灯时间-5s")
-    cm.insert_conclusion("红灯时间+10s")
-    cm.insert_conclusion("红灯时间-10s")
-    cm.insert_conclusion("报警，可能发生事故")
+    cm.insert_conclusion("恶劣天气") # 1
+    cm.insert_conclusion("黄灯时间+2") # 2
+    cm.insert_conclusion("可能发生事故") # 3
+    cm.insert_conclusion("发出事故警报") # 4
+    cm.insert_conclusion("发出高温警报") # 5
     # 添加可信度知识
-    cm.insert_credit_knowledge(premise_id=1,conclusion_id=1,pre_cred=0.8,con_cred=0.7);# 下雨 and 红灯延长5s
-    cm.insert_credit_knowledge(premise_id=2,conclusion_id=3,pre_cred=0.9,con_cred=0.9);# 下雪 and 红灯延长10s
-    cm.insert_credit_knowledge(premise_id=4,conclusion_id=2,pre_cred=0.7,con_cred=0.5);# 晴天 and 红灯减少5s
-    cm.insert_credit_knowledge(premise_id=5,conclusion_id=4,pre_cred=0.7,con_cred=0.6);# 大风 and 红灯减少10s
-
+    cm.insert_credit_knowledge(premise_id=1,conclusion_id=1,pre_cred=0.7,con_cred=1) # 下雨|下雪|大风 -> 恶劣天气 lambda=0.7 cf=1
+    cm.insert_credit_knowledge(premise_id=2,conclusion_id=2,pre_cred=0.5,con_cred=1) # 恶劣天气 -> 黄灯时间+2s
+    cm.insert_credit_knowledge(premise_id=3,conclusion_id=3,pre_cred=0.5,con_cred=0.8) # 车速小&车流量大 -> 可能发生事故
+    cm.insert_credit_knowledge(premise_id=4,conclusion_id=4,pre_cred=0.4,con_cred=0.9) # 可能发生事故->发出警报
+    cm.insert_credit_knowledge(premise_id=5,conclusion_id=5,pre_cred=0.7,con_cred=0.9) # 高温->高温警报
 def init_fuzzy_knowledge(): # 初始化模糊知识
     fm = fuzzy_manager(db)
     # 添加模糊集
@@ -101,8 +100,8 @@ def init_fuzzy_knowledge(): # 初始化模糊知识
     fm.insert_fuzzy_element(12,4,"黄灯时间4s",0.5)
     fm.insert_fuzzy_element(12,5,"黄灯时间5s",1)
     # 添加模糊知识
-    fm.insert_fuzzy_knowledge(1,0.8,1,4)# 车流量小/绿灯时间短,lambda=0.8
-    fm.insert_fuzzy_knowledge(1,0.8,2,5)# 车流量适中/绿灯时间适中,lambda=0.8
+    fm.insert_fuzzy_knowledge(1,0.7,1,4)# 车流量小/绿灯时间短,lambda=0.7
+    fm.insert_fuzzy_knowledge(1,0.7,2,5)# 车流量适中/绿灯时间适中,lambda=0.7
     fm.insert_fuzzy_knowledge(1,0.7,3,6)# 车流量大/绿灯时间长,lambda=0.7
     fm.insert_fuzzy_knowledge(2,0.4,9,12)# 车速小/黄灯时间长,lambda=0.4
     fm.insert_fuzzy_knowledge(2,0.4,8,11)# 车速适中/黄灯时间适中,lambda=0.4
@@ -119,108 +118,102 @@ def db_init():
     init_credit_knowledge()
     init_fuzzy_knowledge()
 #db_init()
-"""
-dpm = DownPosMachine(db)
 
-dpm.start_counting()
-"""
-class fuzzy_infer_machine:
-    def __init__(self,db):
-        self.db = db
-        self.fm = fuzzy_manager(db)
-    def infer(self,traffic,speed):
-        return None
-    def inner_product(self,x,y): # 计算内积
-        assert len(x) == len(y), "inner_product only available for same size"
-        return max([min(x[i],y[i]) for i in range(len(x))])
-    def outer_product(self,x,y): # 计算外积
-        assert len(x) == len(y), "outer_product only available for same size"
-        return min([max(x[i],y[i]) for i in range(len(x))])
-    def dot_product(self,x,y): # 计算B' = D*R(A,B)的过程
-        return [max([min(x[i],y[i][j]) for i in range(len(x))]) for j in range(len(y[0]))]
-    def infer(self,class_id,input,delta=3,explain=False):
-        knowledges_id = self.fm.get_knowledge_id_by_class(class_id)
-        knowledges = self.fm.get_fuzzy_knowledge()
-        # 模糊化-预处理
-        input_range = self.fm.get_fuzzy_set_range(knowledges[knowledges_id[0]]['set_id_a'])
-        for x in knowledges_id:
-            assert self.fm.get_fuzzy_set_range(knowledges[x]['set_id_a']) == input_range, "fuzzy set range for input can't be different"
-        input_range = range(input_range[0],input_range[1]+1)
-        input_fuzzy_mtx = [0 for _ in input_range] # 将车流量模糊化的结果
-        # 模糊化-三角法
-        i = 0
-        for x in input_range:
-            if abs(x - input) <= delta:
-                input_fuzzy_mtx[i] = 1 - abs(input - x) / delta
-            else:
-                input_fuzzy_mtx[i] = 0.0
-            i += 1
-        max_deg = 0
-        max_deg_knowledge = -1
-        # 计算贴近度
-        for kid in knowledges_id:
-            fuzzy_set = self.fm.get_fuzzy_set_by_id(knowledges[kid]['set_id_a'])
-            fuzzy_vector = [self.fm.get_fuzzy_set_y(fuzzy_set,x) for x in input_range]
-            deg = (self.inner_product(fuzzy_vector,input_fuzzy_mtx)+(1-self.outer_product(fuzzy_vector,input_fuzzy_mtx)))/2
-            if deg > max_deg:
-                max_deg = deg
-                max_deg_knowledge = kid
-        if max_deg_knowledge != -1:
-            if explain:
-                if max_deg >= knowledges[max_deg_knowledge]['lambda']:
-                    print("解释：C=%f,成功匹配模糊知识%d,lambda=%f"%(max_deg,max_deg_knowledge,knowledges[max_deg_knowledge]['lambda']))
-                else:
-                    print("解释：C=%f,无法匹配模糊知识%d,lambda=%f"%(max_deg,max_deg_knowledge,knowledges[max_deg_knowledge]['lambda']))
-        else:
-            return 15 # 无法匹配任何结论（按照我们的设计实际不会存在这种情况）
-        # 计算模糊矩阵R(A,B)
-        set_id_a = knowledges[max_deg_knowledge]['set_id_a']
-        set_id_b = knowledges[max_deg_knowledge]['set_id_b']
-        fuzzy_mtx = self.fm.get_fuzzy_matrix(set_id_a,set_id_b,1,1)
-        # 复合计算，B'=D*R(A,B)
-        result = self.dot_product(input_fuzzy_mtx,fuzzy_mtx)
-        # 去模糊化-重心法
-        result_range = self.fm.get_fuzzy_set_range(set_id_b)
-        fz = sum([(result_range[0] + i)*result[i] for i in range(len(result))])
-        fm = sum(result)
-        return fz / fm 
-        
+
 fim = fuzzy_infer_machine(db)
 
+def test_fuzzy_infer():
+    for i in range(0,81):
+        print(i,fim.infer(1,i))
 
-for i in range(0,81):
-    print(i,fim.infer(1,i))
-
-for i in range(0,46):
-    print(i,fim.infer(2,i))
+    for i in range(0,46):
+        print(i,fim.infer(2,i))
 """
-class infer_machine:
-    def __init__(self,db):
-        self.db = db
-        self.fm = fuzzy_manager(db)
-        self.cm = credit_manager(db)
-    def load_knowledge(self):
-        print(self.fm.get_fuzzy_knowledge())
-        print(self.cm.get_credit_knowledge())
-        print(self.cm.get_premise_by_id(1))
-        print(self.cm.get_conclusion_by_id(1))
-    def get_cf_p(self,premise_id):
-        premise = self.cm.get_conclusion_by_id(premise_id)
-        if premise == "下雨":
-            return 0.5
-        elif premise == "下雪":
-            return 0.5
-        elif premise == "下冰雹":
-            return 0.5
-        elif premise == "晴天":
-            return 0.5
-        elif premise == "风速等级大于5级":
-            return 0.5
-        elif premise == "通行速度缓慢":
-            
-        elif premise[0:5] == "eval(":
-
-im = infer_machine(db)
-im.load_knowledge()
+print(fim.get_log())
+test_fuzzy_infer()
+print(fim.get_log())
+"""
+cim = credit_infer_machine(db)
+"""
+cim.update_realtime_info(80,0)
+print(cim.parse_exp("下雨|下雪|大风"))
+print(cim.parse_exp("恶劣天气"))
+print(cim.cal_cf_p("恶劣天气"))
+print(cim.cal_cf_p("下雨|下雪"))
+print(cim.cal_cf_p("车速小&车流量大"))
+cf_p = cim.infer(True)
+cim.explain(cf_p)
 """
 #test_fuzzy_matrix_cal()
+
+
+dpm = DownPosMachine()
+
+def counting():
+    ns_green = 15
+    we_green = 15
+    ns_yellow = 3
+    we_yellow = 3
+    while True:
+        dpm.ticks = 0
+        dpm.sum_time = 0
+        dpm.lasttime = 0
+        dpm.set_ns_green()
+        dpm.set_we_red()
+        print("正在测量南北方向车流量与车速")
+        time.sleep(ns_green)
+        ticks = dpm.ticks
+        speed = 0
+        if ticks != 0 and dpm.sum_time != 0:
+            speed = round(100 / (dpm.sum_time / dpm.ticks))
+        db.insert_sensor_result(0,ticks)
+        dpm.stat[0] = ticks
+        db.insert_sensor_result(2,speed)
+        dpm.stat[2] = speed
+        print("测量结束，南北方向车流=%d，南北方向平均车速=%d" % (ticks,speed))
+        ticks = max(0,min(80,ticks))
+        speed = max(0,min(45,speed))
+        # 计算该方向新的红灯时间
+        new_green_time = fim.infer(1,ticks)
+        print("根据模糊推理结果，南北方向新绿灯时间=%f"%(new_green_time))
+        ns_green = new_green_time
+        # 计算该方向新的黄灯时间
+        new_yellow_time = fim.infer(2,speed)
+        print("根据模糊推理结果，南北方向新黄灯时间=%f"%(new_yellow_time))
+        cim.update_realtime_info(ticks,speed)
+        print("根据可信度推理结果，得到结论：",cim.infer())
+        ns_yellow = new_yellow_time
+        dpm.set_ns_yellow()
+        time.sleep(ns_yellow)
+        dpm.set_ns_red()
+        dpm.set_we_green()
+        dpm.ticks = 0
+        dpm.sum_time = 0
+        dpm.lasttime = 0
+        print("正在测量东西方向车流量")
+        time.sleep(we_green)
+        ticks = dpm.ticks
+        speed = 0
+        if ticks != 0 and dpm.sum_time != 0:
+            speed = round(100 / (dpm.sum_time / dpm.ticks))
+        db.insert_sensor_result(1,ticks)
+        dpm.stat[1] = ticks
+        db.insert_sensor_result(3,speed)
+        dpm.stat[3] = speed
+        print("测量结束，东西方向车流=%d，东西方向平均车速=%d" % (ticks,speed))
+        ticks = max(0,min(80,ticks))
+        speed = max(0,min(45,speed))
+        # 计算该方向新的红灯时间
+        new_green_time = fim.infer(1,ticks)
+        print("根据模糊推理结果，东西方向新绿灯时间=%f"%(new_green_time))
+        we_green = new_green_time
+        # 计算该方向新的黄灯时间
+        new_yellow_time = fim.infer(2,speed)
+        print("根据模糊推理结果，东西方向新黄灯时间=%f"%(new_yellow_time))
+        we_yellow = new_yellow_time
+        cim.update_realtime_info(ticks,speed)
+        print("根据可信度推理结果，得到结论：",cim.infer())
+        dpm.set_we_yellow()
+        time.sleep(we_yellow)
+
+counting()
