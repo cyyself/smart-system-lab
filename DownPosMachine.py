@@ -2,7 +2,7 @@ import serial
 import time
 import threading
 class DownPosMachine:
-    def __init__(self,measuring_time=10,serialPort="/dev/cu.usbmodem14401",baudRate=9600):
+    def __init__(self,serialPort="/dev/cu.usbmodem14401",measuring_time=10,baudRate=9600):
         self.ser = serial.Serial(serialPort, baudRate)
         print("串口=%s，波特率=%d" % (serialPort, baudRate))
         time.sleep(3)
@@ -11,6 +11,7 @@ class DownPosMachine:
         self.lasttime = 0
         self.measuring_time = measuring_time # 方向变换的时间
         self.t1 = threading.Thread(target=self.serial_recv,args=())
+        self.t1.setDaemon(True)
         self.stat = [0,0,0,0]
         self.t1.start()
     def serial_recv(self):

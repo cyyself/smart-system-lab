@@ -4,7 +4,8 @@ from fuzzy_manager import fuzzy_manager
 from credit_manager import credit_manager
 from DB import DB
 from DownPosMachine import DownPosMachine
-from infer_machine import fuzzy_infer_machine,credit_infer_machine
+from fuzzy_infer_machine import fuzzy_infer_machine
+from credit_infer_machine import credit_infer_machine
 
 db = DB()
 
@@ -134,8 +135,8 @@ test_fuzzy_infer()
 print(fim.get_log())
 """
 cim = credit_infer_machine(db)
-"""
-cim.update_realtime_info(80,0)
+
+cim.update_realtime_info(50,0)
 print(cim.parse_exp("下雨|下雪|大风"))
 print(cim.parse_exp("恶劣天气"))
 print(cim.cal_cf_p("恶劣天气"))
@@ -143,7 +144,7 @@ print(cim.cal_cf_p("下雨|下雪"))
 print(cim.cal_cf_p("车速小&车流量大"))
 cf_p = cim.infer(True)
 cim.explain(cf_p)
-"""
+
 #test_fuzzy_matrix_cal()
 
 
@@ -175,6 +176,7 @@ def running_thread():
         speed = max(0,min(45,speed))
         # 计算该方向新的红灯时间
         new_green_time = fim.infer(1,ticks)
+        fim.explain_log(fim.get_log()[-1])
         print("根据模糊推理结果，南北方向新绿灯时间=%f"%(new_green_time))
         ns_green = new_green_time
         # 计算该方向新的黄灯时间
@@ -216,4 +218,4 @@ def running_thread():
         dpm.set_we_yellow()
         time.sleep(we_yellow)
 
-running_thread()
+#running_thread()
