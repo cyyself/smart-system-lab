@@ -141,10 +141,12 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
             new_green_time = self.dpm_fim.infer(1,ticks)
             self.dpm_log.append("根据模糊推理结果，南北方向新绿灯时间=%f"%(new_green_time))
             self.refresh_dpm_log()
+            db.insert_log(0,new_green_time)
             ns_green = new_green_time
             # 计算该方向新的黄灯时间
             new_yellow_time = self.dpm_fim.infer(2,speed)
             self.dpm_log.append("根据模糊推理结果，南北方向新黄灯时间=%f"%(new_yellow_time))
+            db.insert_log(1,new_yellow_time)
             self.refresh_dpm_log()
             self.dpm_cim.update_realtime_info(ticks,speed)
             self.dpm_log.append("根据可信度推理结果，得到结论：%s"%(str(self.dpm_cim.infer())))
@@ -176,11 +178,13 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
             new_green_time = self.dpm_fim.infer(1,ticks)
             self.dpm_log.append("根据模糊推理结果，东西方向新绿灯时间=%f"%(new_green_time))
             self.refresh_dpm_log()
+            db.insert_log(2,new_green_time)
             we_green = new_green_time
             # 计算该方向新的黄灯时间
             new_yellow_time = self.dpm_fim.infer(2,speed)
             self.dpm_log.append("根据模糊推理结果，东西方向新黄灯时间=%f"%(new_yellow_time))
             self.refresh_dpm_log()
+            db.insert_log(3,new_yellow_time)
             we_yellow = new_yellow_time
             self.dpm_cim.update_realtime_info(ticks,speed)
             self.dpm_log.append("根据可信度推理结果，得到结论：%s"%(str(self.dpm_cim.infer())))

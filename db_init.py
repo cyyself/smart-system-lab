@@ -134,9 +134,11 @@ def test_fuzzy_infer():
     for i in range(0,46):
         print(i,fim.infer(2,i))
 """
+"""
 print(fim.get_log())
 test_fuzzy_infer()
 print(fim.get_log())
+"""
 """
 cim = credit_infer_machine(db)
 
