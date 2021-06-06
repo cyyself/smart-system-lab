@@ -107,7 +107,11 @@ def init_fuzzy_knowledge(): # 初始化模糊知识
     fm.insert_fuzzy_knowledge(2,0.4,9,12)# 车速小/黄灯时间长,lambda=0.4
     fm.insert_fuzzy_knowledge(2,0.4,8,11)# 车速适中/黄灯时间适中,lambda=0.4
     fm.insert_fuzzy_knowledge(2,0.6,7,10)# 车速大/黄灯时间段,lambda=0.6
-
+def db_init():
+    init_credit_knowledge()
+    init_fuzzy_knowledge()
+db_init()
+"""
 def test_fuzzy_matrix_cal():
     fm = fuzzy_manager(db)
     fuzzy_knowledge = fm.get_fuzzy_knowledge()
@@ -118,7 +122,7 @@ def test_fuzzy_matrix_cal():
 def db_init():
     init_credit_knowledge()
     init_fuzzy_knowledge()
-#db_init()
+db_init()
 
 
 fim = fuzzy_infer_machine(db)
@@ -219,3 +223,4 @@ def running_thread():
         time.sleep(we_yellow)
 
 #running_thread()
+"""
