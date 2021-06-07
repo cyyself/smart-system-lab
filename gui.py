@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QInputDialog, QMessageBox
-from PyQt5.QtCore import QStringListModel
+from PyQt5.QtCore import QStringListModel, QTimer
 from mainui import Ui_MainWindow
 from DownPosMachine import DownPosMachine
 from DB import DB
@@ -31,6 +31,9 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
         self.sim_cim = credit_infer_machine(db)
         self.dpm_fim = fuzzy_infer_machine(db)
         self.dpm_cim = credit_infer_machine(db)
+        self.timer=QTimer()
+        self.timer.timeout.connect(self.refresh_dpm_log)
+        self.timer.start(200)
     def connect_down_machine(self):
         global dpm
         if dpm == None:
@@ -123,34 +126,29 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
             dpm.set_ns_green()
             dpm.set_we_red()
             self.dpm_log.append("正在测量南北方向车流量与车速")
-            self.refresh_dpm_log()
             time.sleep(ns_green)
-            ticks = dpm.ticks
+            ticks = dpm.ticks*4
             speed = 0
             if ticks != 0 and dpm.sum_time != 0:
-                speed = round(10 / (dpm.sum_time / dpm.ticks))
+                speed = round(1 / (dpm.sum_time / dpm.ticks))
             db.insert_sensor_result(0,ticks)
             dpm.stat[0] = ticks
             db.insert_sensor_result(2,speed)
             dpm.stat[2] = speed
             self.dpm_log.append("测量结束，南北方向车流=%d，南北方向平均车速=%d" % (ticks,speed))
-            self.refresh_dpm_log()
             ticks = max(0,min(80,ticks))
             speed = max(0,min(45,speed))
             # 计算该方向新的红灯时间
             new_green_time = self.dpm_fim.infer(1,ticks)
             self.dpm_log.append("根据模糊推理结果，南北方向新绿灯时间=%f"%(new_green_time))
-            self.refresh_dpm_log()
             db.insert_log(0,new_green_time)
             ns_green = new_green_time
             # 计算该方向新的黄灯时间
             new_yellow_time = self.dpm_fim.infer(2,speed)
             self.dpm_log.append("根据模糊推理结果，南北方向新黄灯时间=%f"%(new_yellow_time))
             db.insert_log(1,new_yellow_time)
-            self.refresh_dpm_log()
             self.dpm_cim.update_realtime_info(ticks,speed)
             self.dpm_log.append("根据可信度推理结果，得到结论：%s"%(str(self.dpm_cim.infer())))
-            self.refresh_dpm_log()
             ns_yellow = new_yellow_time
             dpm.set_ns_yellow()
             time.sleep(ns_yellow)
@@ -160,35 +158,30 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
             dpm.sum_time = 0
             dpm.lasttime = 0
             self.dpm_log.append("正在测量东西方向车流量与车速")
-            self.refresh_dpm_log()
             time.sleep(we_green)
-            ticks = dpm.ticks
+            ticks = dpm.ticks * 4
             speed = 0
             if ticks != 0 and dpm.sum_time != 0:
-                speed = round(10 / (dpm.sum_time / dpm.ticks))
+                speed = round(1 / (dpm.sum_time / dpm.ticks))
             db.insert_sensor_result(1,ticks)
             dpm.stat[1] = ticks
             db.insert_sensor_result(3,speed)
             dpm.stat[3] = speed
             self.dpm_log.append("测量结束，东西方向车流=%d，东西方向平均车速=%d" % (ticks,speed))
-            self.refresh_dpm_log()
             ticks = max(0,min(80,ticks))
             speed = max(0,min(45,speed))
             # 计算该方向新的红灯时间
             new_green_time = self.dpm_fim.infer(1,ticks)
             self.dpm_log.append("根据模糊推理结果，东西方向新绿灯时间=%f"%(new_green_time))
-            self.refresh_dpm_log()
             db.insert_log(2,new_green_time)
             we_green = new_green_time
             # 计算该方向新的黄灯时间
             new_yellow_time = self.dpm_fim.infer(2,speed)
             self.dpm_log.append("根据模糊推理结果，东西方向新黄灯时间=%f"%(new_yellow_time))
-            self.refresh_dpm_log()
             db.insert_log(3,new_yellow_time)
             we_yellow = new_yellow_time
             self.dpm_cim.update_realtime_info(ticks,speed)
             self.dpm_log.append("根据可信度推理结果，得到结论：%s"%(str(self.dpm_cim.infer())))
-            self.refresh_dpm_log()
             dpm.set_we_yellow()
             time.sleep(we_yellow)
 if __name__ == "__main__":
