@@ -38,6 +38,10 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
         self.ClearDownLog.clicked.connect(self.clear_dpm_log_action)
         self.ExpCreditResult.clicked.connect(self.dpm_credit_action)
         self.ExpFuzzyResult.clicked.connect(self.dpm_fuzzy_action)
+        self.refreshSensor.clicked.connect(self.refreshSensor_click)
+        self.refreshControl.clicked.connect(self.refreshControl_click)
+        self.refreshSensor_click()
+        self.refreshControl_click()
         self.set_NS_Light(0)
         self.set_WE_Light(0)
         self.data_from_dpm = True
@@ -64,6 +68,70 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
         self.timer=QTimer()
         self.timer.timeout.connect(self.refresh_dpm_log)
         self.timer.start(200)
+    def refreshSensor_click(self):
+        sensor_result = db.get_sensor_result()
+        self.tableWidget_2.setRowCount(len(sensor_result))
+        index_i = -1
+        for i in sensor_result:
+            index_i += 1
+            for j in sensor_result[i]:
+                item = QTableWidgetItem(str(sensor_result[i][j]))
+                index_j = None
+                if j == 'sensor_id':
+                    item = sensor_result[i][j]
+                    item = QTableWidgetItem(str(item))
+                    index_j = 0
+                elif j == 'sensor_result':
+                    item = sensor_result[i][j]
+                    item = QTableWidgetItem(str(item))
+                    index_j = 1
+                elif j == 'time':
+                    item = sensor_result[i][j]
+                    item = QTableWidgetItem(str(item))
+                    index_j = 2
+                if index_j is not None:
+                    self.tableWidget_2.setItem(index_i, index_j, item)
+        """
+        credit_knowledge = c_manager.get_credit_knowledge()
+        self.tableWidget.setRowCount(len(credit_knowledge))
+        index_i, index_j = -1, -1
+        for i in credit_knowledge:
+            index_i += 1
+            index_j = -1
+            for j in credit_knowledge[i]:
+                index_j += 1
+                item = QTableWidgetItem(str(credit_knowledge[i][j]))
+                if j == 'premise_id':
+                    item = c_manager.get_premise_by_id(int(credit_knowledge[i][j]))
+                    item = QTableWidgetItem(str(item))
+                elif j == 'conclusion_id':
+                    item = c_manager.get_conclusion_by_id(int(credit_knowledge[i][j]))
+                    item = QTableWidgetItem(str(item))
+                self.tableWidget.setItem(index_i, index_j, item)
+        """
+    def refreshControl_click(self):
+        sensor_result = db.get_log()
+        self.tableWidget_7.setRowCount(len(sensor_result))
+        index_i = -1
+        for i in sensor_result:
+            index_i += 1
+            for j in sensor_result[i]:
+                item = QTableWidgetItem(str(sensor_result[i][j]))
+                index_j = None
+                if j == 'control_id':
+                    item = sensor_result[i][j]
+                    item = QTableWidgetItem(str(item))
+                    index_j = 0
+                elif j == 'control_value':
+                    item = sensor_result[i][j]
+                    item = QTableWidgetItem(str(item))
+                    index_j = 1
+                elif j == 'time':
+                    item = sensor_result[i][j]
+                    item = QTableWidgetItem(str(item))
+                    index_j = 2
+                if index_j is not None:
+                    self.tableWidget_7.setItem(index_i, index_j, item)
     def connect_down_machine(self):
         global dpm
         if dpm == None:

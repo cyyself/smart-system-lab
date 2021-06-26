@@ -50,7 +50,7 @@ class DB:
     def get_sensor_result(self):
         if not hasattr(self,'sensor_result'):
             self.reload_sensor_result()
-        return self.sensor_result()
+        return self.sensor_result
     def insert_sensor_result(self,sensor_id,sensor_result):
         cur = self.conn.cursor()
         cur.execute('INSERT INTO `sensor_result` VALUES(NULL,?,?,?);',(sensor_id,sensor_result,int(time.time())))
