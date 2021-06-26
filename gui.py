@@ -30,6 +30,8 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         super(MyMainForm, self).__init__(parent)
         self.setupUi(self)
+        plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
+        plt.rcParams['axes.unicode_minus'] = False
         self.DownMachineBtn.clicked.connect(self.connect_down_machine)
         self.sim_step.clicked.connect(self.sim_step_action)
         self.sim_clear.clicked.connect(self.sim_clear_action)
@@ -59,6 +61,14 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
         self.fuzzySetUpdate.clicked.connect(self.fuzzy_set_update)
         self.fuzzySetShow.clicked.connect(self.fuzzy_set_show)
         self.tableWidget_3.clicked.connect(self.fuzzy_knowledge_click)
+        # 统计分析相关
+        self.time_list = None
+        self.analyze.clicked.connect(self.analyze_click)
+        self.plot_traffic.clicked.connect(self.plot_traffic_click)
+        self.plot_speed.clicked.connect(self.plot_speed_click)
+        self.plot_green_time.clicked.connect(self.plot_green_click)
+        self.plot_yellow_time.clicked.connect(self.plot_yellow_click)
+        # 其它
         self.sim_log = []
         self.dpm_log = []
         self.sim_fim = fuzzy_infer_machine(db)
@@ -68,6 +78,177 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
         self.timer=QTimer()
         self.timer.timeout.connect(self.refresh_dpm_log)
         self.timer.start(200)
+    def plot_traffic_click(self):
+        if self.time_list is None:
+            QMessageBox.critical(self,"信息","请先统计")
+        else:
+            we_traffic = [self.time_list[x]['traffic_we'] for x in self.time_list]
+            ns_traffic = [self.time_list[x]['traffic_ns'] for x in self.time_list]
+            x = [x for x in self.time_list]
+            l1=plt.plot(x,we_traffic,'r--',label='东西方向车流量')
+            l2=plt.plot(x,ns_traffic,'g--',label='南北方向车流量')
+            plt.plot(x,we_traffic,'ro-',x,ns_traffic,'go-')
+            plt.title('车流量统计图')
+            plt.legend()
+            plt.show()
+    def plot_speed_click(self):
+        if self.time_list is None:
+            QMessageBox.critical(self,"信息","请先统计")
+        else:
+            we_speed = [self.time_list[x]['speed_we'] for x in self.time_list]
+            ns_speed = [self.time_list[x]['speed_ns'] for x in self.time_list]
+            x = [x for x in self.time_list]
+            l1=plt.plot(x,we_speed,'r--',label='东西方向车速')
+            l2=plt.plot(x,ns_speed,'g--',label='南北方向车速')
+            plt.plot(x,we_speed,'ro-',x,ns_speed,'go-')
+            plt.title('车速统计图')
+            plt.legend()
+            plt.show()
+    def plot_green_click(self):
+        if self.time_list is None:
+            QMessageBox.critical(self,"信息","请先统计")
+        else:
+            we_green = [self.time_list[x]['green_we'] for x in self.time_list]
+            ns_green = [self.time_list[x]['green_ns'] for x in self.time_list]
+            x = [x for x in self.time_list]
+            l1=plt.plot(x,we_green,'r--',label='东西方向绿灯')
+            l2=plt.plot(x,ns_green,'g--',label='南北方向绿灯')
+            plt.plot(x,we_green,'ro-',x,ns_green,'go-')
+            plt.title('绿灯时间统计图')
+            plt.legend()
+            plt.show()
+    def plot_yellow_click(self):
+        if self.time_list is None:
+            QMessageBox.critical(self,"信息","请先统计")
+        else:
+            we_green = [self.time_list[x]['yellow_we'] for x in self.time_list]
+            ns_green = [self.time_list[x]['yellow_ns'] for x in self.time_list]
+            x = [x for x in self.time_list]
+            l1=plt.plot(x,we_green,'r--',label='东西方向黄灯')
+            l2=plt.plot(x,ns_green,'g--',label='南北方向黄灯')
+            plt.plot(x,we_green,'ro-',x,ns_green,'go-')
+            plt.title('黄灯时间统计图')
+            plt.legend()
+            plt.show()
+    def analyze_click(self):
+        time_interval = max(self.time_interval.value(),1)
+        time_start = self.time_start.value()
+        time_end = self.time_end.value()
+        if time_end == 0:
+            time_end = time.time()
+        time_start //= time_interval
+        time_end //= time_interval
+        sensor_result = db.get_sensor_result()
+        log = db.get_log()
+        time_list = dict()
+        for x in sensor_result:
+            data = sensor_result[x]
+            index = data['time'] // time_interval
+            if index not in time_list:
+                time_list[index] = {
+                    'speed_we':0,
+                    'traffic_we':0,
+                    'green_we':0,
+                    'yellow_we':0,
+                    'speed_ns':0,
+                    'traffic_ns':0,
+                    'green_ns':0,
+                    'yellow_ns':0,
+                    'count_log_we':0,
+                    'count_log_ns':0,
+                    'count_control_we':0,
+                    'count_control_ns':0
+                }
+            if data['sensor_id'] == 0: # 南北方向车流量
+                time_list[index]['traffic_ns'] += data['sensor_result']
+                time_list[index]['count_log_ns'] += 1
+            elif data['sensor_id'] == 1: # 东西方向车流量
+                time_list[index]['traffic_we'] += data['sensor_result']
+                time_list[index]['count_log_we'] += 1
+            elif data['sensor_id'] == 2: # 南北方向车速
+                time_list[index]['speed_ns'] += data['sensor_result']
+                time_list[index]['count_log_ns'] += 1
+            else: # 东西方向车速
+                time_list[index]['speed_we'] += data['sensor_result']
+                time_list[index]['count_log_we'] += 1
+        for x in log:
+            data = log[x]
+            index = data['time'] // time_interval
+            if index not in time_list:
+                time_list[index] = {
+                    'speed_we':0,
+                    'traffic_we':0,
+                    'green_we':0,
+                    'yellow_we':0,
+                    'speed_ns':0,
+                    'traffic_ns':0,
+                    'green_ns':0,
+                    'yellow_ns':0,
+                    'count_log_we':0,
+                    'count_log_ns':0,
+                    'count_control_we':0,
+                    'count_control_ns':0
+                }
+            if data['control_id'] == 0: # 南北方向绿灯时间
+                time_list[index]['green_ns'] += data['control_value']
+                time_list[index]['count_control_ns'] += 1
+            elif data['control_id'] == 1: # 南北方向黄灯时间
+                time_list[index]['yellow_ns'] += data['control_value']
+                time_list[index]['count_control_ns'] += 1
+            elif data['control_id'] == 2: # 东西方向绿灯时间
+                time_list[index]['green_we'] += data['control_value']
+                time_list[index]['count_control_we'] += 1
+            else: # 东西方向黄灯时间
+                time_list[index]['yellow_we'] += data['control_value']
+                time_list[index]['count_control_we'] += 1
+        self.tableWidget_8.setRowCount(len(time_list))
+        index_i = 0
+        for i in time_list:
+            time_str = "{}~{}".format(i*time_interval,(i+1)*time_interval-1)
+            try:
+                time_list[i]['speed_we'] /= time_list[i]['count_log_we'] / 2
+            except:
+                time_list[i]['speed_we'] = 0
+            try:
+                time_list[i]['speed_ns'] /= time_list[i]['count_log_ns'] / 2
+            except:
+                time_list[i]['speed_ns'] = 0
+            try:
+                time_list[i]['traffic_we'] /= time_list[i]['count_log_we'] / 2
+            except:
+                time_list[i]['traffic_we'] = 0
+            try:
+                time_list[i]['traffic_ns'] /= time_list[i]['count_log_ns'] / 2
+            except:
+                time_list[i]['traffic_ns'] = 0
+            try:
+                time_list[i]['green_ns'] /= time_list[i]['count_control_ns'] / 2
+            except:
+                time_list[i]['green_ns'] = 0
+            try:
+                time_list[i]['yellow_ns'] /= time_list[i]['count_control_ns'] / 2
+            except:
+                time_list[i]['yellow_ns'] = 0
+            try:
+                time_list[i]['green_we'] /= time_list[i]['count_control_we'] / 2
+            except:
+                time_list[i]['green_we'] = 0
+            try:
+                time_list[i]['yellow_we'] /= time_list[i]['count_control_we'] / 2
+            except:
+                time_list[i]['yellow_we'] = 0
+            self.tableWidget_8.setItem(index_i,0,QTableWidgetItem(time_str))
+            self.tableWidget_8.setItem(index_i,1,QTableWidgetItem(str(time_list[i]['traffic_we'])))
+            self.tableWidget_8.setItem(index_i,2,QTableWidgetItem(str(time_list[i]['speed_we'])))
+            self.tableWidget_8.setItem(index_i,3,QTableWidgetItem(str(time_list[i]['green_we'])))
+            self.tableWidget_8.setItem(index_i,4,QTableWidgetItem(str(time_list[i]['yellow_we'])))
+            self.tableWidget_8.setItem(index_i,5,QTableWidgetItem(str(time_list[i]['traffic_ns'])))
+            self.tableWidget_8.setItem(index_i,6,QTableWidgetItem(str(time_list[i]['speed_ns'])))
+            self.tableWidget_8.setItem(index_i,7,QTableWidgetItem(str(time_list[i]['green_ns'])))
+            self.tableWidget_8.setItem(index_i,8,QTableWidgetItem(str(time_list[i]['yellow_ns'])))
+            index_i += 1
+        self.time_list = time_list
+        
     def refreshSensor_click(self):
         sensor_result = db.get_sensor_result()
         self.tableWidget_2.setRowCount(len(sensor_result))
@@ -91,24 +272,6 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
                     index_j = 2
                 if index_j is not None:
                     self.tableWidget_2.setItem(index_i, index_j, item)
-        """
-        credit_knowledge = c_manager.get_credit_knowledge()
-        self.tableWidget.setRowCount(len(credit_knowledge))
-        index_i, index_j = -1, -1
-        for i in credit_knowledge:
-            index_i += 1
-            index_j = -1
-            for j in credit_knowledge[i]:
-                index_j += 1
-                item = QTableWidgetItem(str(credit_knowledge[i][j]))
-                if j == 'premise_id':
-                    item = c_manager.get_premise_by_id(int(credit_knowledge[i][j]))
-                    item = QTableWidgetItem(str(item))
-                elif j == 'conclusion_id':
-                    item = c_manager.get_conclusion_by_id(int(credit_knowledge[i][j]))
-                    item = QTableWidgetItem(str(item))
-                self.tableWidget.setItem(index_i, index_j, item)
-        """
     def refreshControl_click(self):
         sensor_result = db.get_log()
         self.tableWidget_7.setRowCount(len(sensor_result))
@@ -444,8 +607,6 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
             fuzzy_set = f_manager.get_fuzzy_set_by_id(set_id)
             x = fuzzy_set.keys()
             y = [fuzzy_set[key] for key in fuzzy_set.keys()]
-            plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
-            plt.rcParams['axes.unicode_minus'] = False
             plt.title(fuzzy_set_name)
             plt.xlabel("x")
             plt.ylabel("y")
