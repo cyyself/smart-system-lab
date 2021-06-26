@@ -660,6 +660,9 @@
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: black</string>
+      </property>
       <property name="text">
        <string/>
       </property>
@@ -675,6 +678,9 @@
       </property>
       <property name="autoFillBackground">
        <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: black</string>
       </property>
       <property name="text">
        <string/>
@@ -692,6 +698,9 @@
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: black</string>
+      </property>
       <property name="text">
        <string/>
       </property>
@@ -707,6 +716,9 @@
       </property>
       <property name="autoFillBackground">
        <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: black</string>
       </property>
       <property name="text">
        <string/>
@@ -724,6 +736,9 @@
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: black</string>
+      </property>
       <property name="text">
        <string/>
       </property>
@@ -739,6 +754,9 @@
       </property>
       <property name="autoFillBackground">
        <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: black</string>
       </property>
       <property name="text">
        <string/>
@@ -756,6 +774,9 @@
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: black</string>
+      </property>
       <property name="text">
        <string/>
       </property>
@@ -771,6 +792,9 @@
       </property>
       <property name="autoFillBackground">
        <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: black</string>
       </property>
       <property name="text">
        <string/>
@@ -788,6 +812,9 @@
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: black</string>
+      </property>
       <property name="text">
        <string/>
       </property>
@@ -803,6 +830,9 @@
       </property>
       <property name="autoFillBackground">
        <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: black</string>
       </property>
       <property name="text">
        <string/>
@@ -820,6 +850,9 @@
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: black</string>
+      </property>
       <property name="text">
        <string/>
       </property>
@@ -835,6 +868,9 @@
       </property>
       <property name="autoFillBackground">
        <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: black</string>
       </property>
       <property name="text">
        <string/>
@@ -872,6 +908,26 @@
        <bool>false</bool>
       </property>
      </widget>
+     <zorder>DownMachineBtn</zorder>
+     <zorder>ExpCreditResult</zorder>
+     <zorder>ExpFuzzyResult</zorder>
+     <zorder>ClearDownLog</zorder>
+     <zorder>dpm_result</zorder>
+     <zorder>label_9</zorder>
+     <zorder>NS_Y_1</zorder>
+     <zorder>NS_G_1</zorder>
+     <zorder>NS_Y_2</zorder>
+     <zorder>NS_G_2</zorder>
+     <zorder>NS_R_2</zorder>
+     <zorder>WE_R_1</zorder>
+     <zorder>WE_Y_1</zorder>
+     <zorder>WE_G_1</zorder>
+     <zorder>WE_G_2</zorder>
+     <zorder>WE_R_2</zorder>
+     <zorder>WE_Y_2</zorder>
+     <zorder>use_dpm</zorder>
+     <zorder>use_baiduapi</zorder>
+     <zorder>NS_R_1</zorder>
     </widget>
     <widget class="QWidget" name="tab_4">
      <attribute name="title">

@@ -165,7 +165,7 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
                 if ticks != 0 and dpm.sum_time != 0:
                     speed = round(1 / (dpm.sum_time / dpm.ticks))
             else:
-                speed,ticks = baidu_data.get_we()
+                speed,ticks = baidu_data.get_ns()
             db.insert_sensor_result(0,ticks)
             dpm.stat[0] = ticks
             db.insert_sensor_result(2,speed)
@@ -405,33 +405,33 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
 
     def set_NS_Light(self,status=0):
         if status == 0:
-            self.NS_R_1.setStyleSheet("background-color: Black")
-            self.NS_Y_1.setStyleSheet("background-color: Black")
-            self.NS_G_1.setStyleSheet("background-color: Black")
-            self.NS_R_2.setStyleSheet("background-color: Black")
-            self.NS_Y_2.setStyleSheet("background-color: Black")
-            self.NS_G_2.setStyleSheet("background-color: Black")
+            self.NS_R_1.setStyleSheet("background-color: black;")
+            self.NS_Y_1.setStyleSheet("background-color: black;")
+            self.NS_G_1.setStyleSheet("background-color: black;")
+            self.NS_R_2.setStyleSheet("background-color: black;")
+            self.NS_Y_2.setStyleSheet("background-color: black;")
+            self.NS_G_2.setStyleSheet("background-color: black;")
         elif status == 1:
-            self.NS_R_1.setStyleSheet("background-color: Red")
-            self.NS_Y_1.setStyleSheet("background-color: Black")
-            self.NS_G_1.setStyleSheet("background-color: Black")
-            self.NS_R_2.setStyleSheet("background-color: Red")
-            self.NS_Y_2.setStyleSheet("background-color: Black")
-            self.NS_G_2.setStyleSheet("background-color: Black")
+            self.NS_R_1.setStyleSheet("background-color: red;")
+            self.NS_Y_1.setStyleSheet("background-color: black;")
+            self.NS_G_1.setStyleSheet("background-color: black;")
+            self.NS_R_2.setStyleSheet("background-color: red;")
+            self.NS_Y_2.setStyleSheet("background-color: black;")
+            self.NS_G_2.setStyleSheet("background-color: black;")
         elif status == 2:
-            self.NS_R_1.setStyleSheet("background-color: Black")
-            self.NS_Y_1.setStyleSheet("background-color: Yellow")
-            self.NS_G_1.setStyleSheet("background-color: Black")
-            self.NS_R_2.setStyleSheet("background-color: Black")
-            self.NS_Y_2.setStyleSheet("background-color: Yellow")
-            self.NS_G_2.setStyleSheet("background-color: Black")
+            self.NS_R_1.setStyleSheet("background-color: black;")
+            self.NS_Y_1.setStyleSheet("background-color: yellow;")
+            self.NS_G_1.setStyleSheet("background-color: black;")
+            self.NS_R_2.setStyleSheet("background-color: black;")
+            self.NS_Y_2.setStyleSheet("background-color: yellow;")
+            self.NS_G_2.setStyleSheet("background-color: black;")
         elif status == 3:
-            self.NS_R_1.setStyleSheet("background-color: Black")
-            self.NS_Y_1.setStyleSheet("background-color: Black")
-            self.NS_G_1.setStyleSheet("background-color: GreenYellow")
-            self.NS_R_2.setStyleSheet("background-color: Black")
-            self.NS_Y_2.setStyleSheet("background-color: Black")
-            self.NS_G_2.setStyleSheet("background-color: GreenYellow")
+            self.NS_R_1.setStyleSheet("background-color: black;")
+            self.NS_Y_1.setStyleSheet("background-color: black;")
+            self.NS_G_1.setStyleSheet("background-color: greenyellow;")
+            self.NS_R_2.setStyleSheet("background-color: black;")
+            self.NS_Y_2.setStyleSheet("background-color: black;")
+            self.NS_G_2.setStyleSheet("background-color: greenyellow;")
     
     def set_WE_Light(self,status=0):
         if status == 0:
