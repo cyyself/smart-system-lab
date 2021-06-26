@@ -94,6 +94,6 @@ class credit_manager:
     def delete_credit_knowledge(self,credit_id):
         cur = self.conn.cursor()
         cur.execute('DELETE FROM `credit_knowledge` WHERE `credit_id` = ?;',(credit_id,))
-        self.conn.commmit()
+        self.conn.commit()
         self.reload_credit_knowledge()
     # Table credit_knowledge }
