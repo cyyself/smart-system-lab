@@ -168,12 +168,12 @@ class fuzzy_manager:
         self.reload_fuzzy_set()
     def insert_fuzzy_set(self,set_name):
         cur = self.conn.cursor()
-        cur.execute('INSERT INTO `fuzzy_set` VALUES (NULL,?);',(set_name,));
+        cur.execute('INSERT INTO `fuzzy_set` VALUES (NULL,?);',(set_name,))
         self.conn.commit()
         self.reload_fuzzy_set()
     def delete_fuzzy_set(self,set_id):
         cur = self.conn.cursor()
-        cur.execite('DELETE FROM `fuzzy_set` WHERE `set_id` = ?;',(set_id,))
+        cur.execute('DELETE FROM `fuzzy_set` WHERE `set_id` = ?;',(set_id,))
         self.conn.commit()
         self.reload_fuzzy_set()
     # Table fuzzy set }
