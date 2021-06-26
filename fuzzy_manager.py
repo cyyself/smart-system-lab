@@ -42,6 +42,12 @@ class fuzzy_manager:
             if item['set_id'] == set_id:
                 fuzzy_set[item['x_pos']] = item['y']
         return fuzzy_set
+    def get_fuzzy_set_id_by_name(self,set_name):
+        sets = self.get_fuzzy_set()
+        for x in sets.keys():
+            if sets[x] == set_name:
+                return x
+        return None
     def get_fuzzy_set_y(self,fuzzy_set,x):
         x_values = sorted(fuzzy_set.keys())
         if x < x_values[0]:

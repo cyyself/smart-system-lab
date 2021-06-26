@@ -1,6 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QInputDialog, QMessageBox, QTableWidgetItem
 from PyQt5.QtCore import QStringListModel, QTimer
+
 from mainui import Ui_MainWindow
 from DownPosMachine import DownPosMachine
 from DB import DB
@@ -11,11 +12,19 @@ import time
 import threading
 from credit_manager import credit_manager
 from fuzzy_manager import fuzzy_manager
+from realtime_api import realtime_api
+
+import matplotlib.pyplot as plt
 
 db = DB()
 dpm = None
 c_manager = credit_manager(db)
 f_manager = fuzzy_manager(db)
+baidu_data = realtime_api()
+
+#def plot_fuzzy_set(set_id):
+
+    
 
 class MyMainForm(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
@@ -29,6 +38,9 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
         self.ClearDownLog.clicked.connect(self.clear_dpm_log_action)
         self.ExpCreditResult.clicked.connect(self.dpm_credit_action)
         self.ExpFuzzyResult.clicked.connect(self.dpm_fuzzy_action)
+        self.set_NS_Light(0)
+        self.set_WE_Light(0)
+        self.data_from_dpm = True
         # 可信度知识相关
         self.premiseInsert.clicked.connect(self.premise_insert)
         self.premiseDelete.clicked.connect(self.premise_delete)
@@ -46,7 +58,7 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
         self.fuzzySetInsert.clicked.connect(self.fuzzy_set_insert)
         self.fuzzySetDelete.clicked.connect(self.fuzzy_set_delete)
         self.fuzzySetUpdate.clicked.connect(self.fuzzy_set_update)
-
+        self.fuzzySetShow.clicked.connect(self.fuzzy_set_show)
         self.sim_log = []
         self.dpm_log = []
         self.sim_fim = fuzzy_infer_machine(db)
@@ -146,13 +158,18 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
             dpm.sum_time = 0
             dpm.lasttime = 0
             dpm.set_ns_green()
+            self.set_NS_Light(3)
             dpm.set_we_red()
+            self.set_WE_Light(1)
             self.dpm_log.append("正在测量南北方向车流量与车速")
             time.sleep(ns_green)
-            ticks = dpm.ticks*4
-            speed = 0
-            if ticks != 0 and dpm.sum_time != 0:
-                speed = round(1 / (dpm.sum_time / dpm.ticks))
+            if self.use_dpm.isChecked():
+                ticks = dpm.ticks*4
+                speed = 0
+                if ticks != 0 and dpm.sum_time != 0:
+                    speed = round(1 / (dpm.sum_time / dpm.ticks))
+            else:
+                speed,ticks = baidu_data.get_we()
             db.insert_sensor_result(0,ticks)
             dpm.stat[0] = ticks
             db.insert_sensor_result(2,speed)
@@ -173,18 +190,24 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
             self.dpm_log.append("根据可信度推理结果，得到结论：%s"%(str(self.dpm_cim.infer())))
             ns_yellow = new_yellow_time
             dpm.set_ns_yellow()
+            self.set_NS_Light(2)
             time.sleep(ns_yellow)
             dpm.set_ns_red()
+            self.set_NS_Light(1)
             dpm.set_we_green()
+            self.set_WE_Light(3)
             dpm.ticks = 0
             dpm.sum_time = 0
             dpm.lasttime = 0
             self.dpm_log.append("正在测量东西方向车流量与车速")
             time.sleep(we_green)
-            ticks = dpm.ticks * 4
-            speed = 0
-            if ticks != 0 and dpm.sum_time != 0:
-                speed = round(1 / (dpm.sum_time / dpm.ticks))
+            if self.use_dpm.isChecked():
+                ticks = dpm.ticks * 4
+                speed = 0
+                if ticks != 0 and dpm.sum_time != 0:
+                    speed = round(1 / (dpm.sum_time / dpm.ticks))
+            else:
+                speed,ticks = baidu_data.get_we()
             db.insert_sensor_result(1,ticks)
             dpm.stat[1] = ticks
             db.insert_sensor_result(3,speed)
@@ -205,6 +228,7 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
             self.dpm_cim.update_realtime_info(ticks,speed)
             self.dpm_log.append("根据可信度推理结果，得到结论：%s"%(str(self.dpm_cim.infer())))
             dpm.set_we_yellow()
+            self.set_WE_Light(2)
             time.sleep(we_yellow)
 
     # 可信度知识展示
@@ -372,7 +396,84 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
             f_manager.update_fuzzy_set(int(id), content)
         except:
             print("update fuzzy_set failed!")
+    
+    def fuzzy_set_show(self):
+        fuzzy_set_name = self.fuzzy_a.toPlainText()
+        set_id = f_manager.get_fuzzy_set_id_by_name(fuzzy_set_name)
+        if set_id == None:
+            QMessageBox.critical(self,"错误","找不到模糊集名称")
+        else:
+            fuzzy_set = f_manager.get_fuzzy_set_by_id(set_id)
+            x = fuzzy_set.keys()
+            y = [fuzzy_set[key] for key in fuzzy_set.keys()]
+            plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
+            plt.rcParams['axes.unicode_minus'] = False
+            plt.title(fuzzy_set_name)
+            plt.xlabel("x")
+            plt.ylabel("y")
+            plt.plot(x,y,'b^-')
+            plt.legend()
+            plt.show()
 
+    def set_NS_Light(self,status=0):
+        if status == 0:
+            self.NS_R_1.setStyleSheet("background-color: Black")
+            self.NS_Y_1.setStyleSheet("background-color: Black")
+            self.NS_G_1.setStyleSheet("background-color: Black")
+            self.NS_R_2.setStyleSheet("background-color: Black")
+            self.NS_Y_2.setStyleSheet("background-color: Black")
+            self.NS_G_2.setStyleSheet("background-color: Black")
+        elif status == 1:
+            self.NS_R_1.setStyleSheet("background-color: Red")
+            self.NS_Y_1.setStyleSheet("background-color: Black")
+            self.NS_G_1.setStyleSheet("background-color: Black")
+            self.NS_R_2.setStyleSheet("background-color: Red")
+            self.NS_Y_2.setStyleSheet("background-color: Black")
+            self.NS_G_2.setStyleSheet("background-color: Black")
+        elif status == 2:
+            self.NS_R_1.setStyleSheet("background-color: Black")
+            self.NS_Y_1.setStyleSheet("background-color: Yellow")
+            self.NS_G_1.setStyleSheet("background-color: Black")
+            self.NS_R_2.setStyleSheet("background-color: Black")
+            self.NS_Y_2.setStyleSheet("background-color: Yellow")
+            self.NS_G_2.setStyleSheet("background-color: Black")
+        elif status == 3:
+            self.NS_R_1.setStyleSheet("background-color: Black")
+            self.NS_Y_1.setStyleSheet("background-color: Black")
+            self.NS_G_1.setStyleSheet("background-color: GreenYellow")
+            self.NS_R_2.setStyleSheet("background-color: Black")
+            self.NS_Y_2.setStyleSheet("background-color: Black")
+            self.NS_G_2.setStyleSheet("background-color: GreenYellow")
+    
+    def set_WE_Light(self,status=0):
+        if status == 0:
+            self.WE_R_1.setStyleSheet("background-color: Black")
+            self.WE_Y_1.setStyleSheet("background-color: Black")
+            self.WE_G_1.setStyleSheet("background-color: Black")
+            self.WE_R_2.setStyleSheet("background-color: Black")
+            self.WE_Y_2.setStyleSheet("background-color: Black")
+            self.WE_G_2.setStyleSheet("background-color: Black")
+        elif status == 1:
+            self.WE_R_1.setStyleSheet("background-color: Red")
+            self.WE_Y_1.setStyleSheet("background-color: Black")
+            self.WE_G_1.setStyleSheet("background-color: Black")
+            self.WE_R_2.setStyleSheet("background-color: Red")
+            self.WE_Y_2.setStyleSheet("background-color: Black")
+            self.WE_G_2.setStyleSheet("background-color: Black")
+        elif status == 2:
+            self.WE_R_1.setStyleSheet("background-color: Black")
+            self.WE_Y_1.setStyleSheet("background-color: Yellow")
+            self.WE_G_1.setStyleSheet("background-color: Black")
+            self.WE_R_2.setStyleSheet("background-color: Black")
+            self.WE_Y_2.setStyleSheet("background-color: Yellow")
+            self.WE_G_2.setStyleSheet("background-color: Black")
+        elif status == 3:
+            self.WE_R_1.setStyleSheet("background-color: Black")
+            self.WE_Y_1.setStyleSheet("background-color: Black")
+            self.WE_G_1.setStyleSheet("background-color: GreenYellow")
+            self.WE_R_2.setStyleSheet("background-color: Black")
+            self.WE_Y_2.setStyleSheet("background-color: Black")
+            self.WE_G_2.setStyleSheet("background-color: GreenYellow")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
