@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QInputDialog, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QInputDialog, QMessageBox, QTableWidgetItem
 from PyQt5.QtCore import QStringListModel, QTimer
 from mainui import Ui_MainWindow
 from DownPosMachine import DownPosMachine
@@ -9,9 +9,13 @@ from fuzzy_infer_machine import fuzzy_infer_machine
 from credit_infer_machine import credit_infer_machine
 import time
 import threading
+from credit_manager import credit_manager
+from fuzzy_manager import fuzzy_manager
 
 db = DB()
 dpm = None
+c_manager = credit_manager(db)
+f_manager = fuzzy_manager(db)
 
 class MyMainForm(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
@@ -25,6 +29,24 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
         self.ClearDownLog.clicked.connect(self.clear_dpm_log_action)
         self.ExpCreditResult.clicked.connect(self.dpm_credit_action)
         self.ExpFuzzyResult.clicked.connect(self.dpm_fuzzy_action)
+        # 可信度知识相关
+        self.premiseInsert.clicked.connect(self.premise_insert)
+        self.premiseDelete.clicked.connect(self.premise_delete)
+        self.premiseUpdate.clicked.connect(self.premise_update)
+        self.conclusionInsert.clicked.connect(self.conclusion_insert)
+        self.conclusionDelete.clicked.connect(self.conclusion_delete)
+        self.conclusionUpdate.clicked.connect(self.conclusion_update)
+        self.creditInsert.clicked.connect(self.credit_insert)
+        self.creditDelete.clicked.connect(self.credit_delete)
+        self.creditUpdate.clicked.connect(self.credit_update)
+        # 模糊知识相关
+        self.fuzzyInsert.clicked.connect(self.fuzzy_insert)
+        self.fuzzyDelete.clicked.connect(self.fuzzy_delete)
+        self.fuzzyUpdate.clicked.connect(self.fuzzy_update)
+        self.fuzzySetInsert.clicked.connect(self.fuzzy_set_insert)
+        self.fuzzySetDelete.clicked.connect(self.fuzzy_set_delete)
+        self.fuzzySetUpdate.clicked.connect(self.fuzzy_set_update)
+
         self.sim_log = []
         self.dpm_log = []
         self.sim_fim = fuzzy_infer_machine(db)
@@ -184,8 +206,178 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
             self.dpm_log.append("根据可信度推理结果，得到结论：%s"%(str(self.dpm_cim.infer())))
             dpm.set_we_yellow()
             time.sleep(we_yellow)
+
+    # 可信度知识展示
+    def credit_show(self):
+        credit_knowledge = c_manager.get_credit_knowledge()
+        self.tableWidget.setRowCount(len(credit_knowledge))
+        index_i, index_j = -1, -1
+        for i in credit_knowledge:
+            index_i += 1
+            index_j = -1
+            for j in credit_knowledge[i]:
+                index_j += 1
+                item = QTableWidgetItem(str(credit_knowledge[i][j]))
+                if j == 'premise_id':
+                    item = c_manager.get_premise_by_id(int(credit_knowledge[i][j]))
+                    item = QTableWidgetItem(str(item))
+                elif j == 'conclusion_id':
+                    item = c_manager.get_conclusion_by_id(int(credit_knowledge[i][j]))
+                    item = QTableWidgetItem(str(item))
+                self.tableWidget.setItem(index_i, index_j, item)
+
+    # 条件/前提插入
+    def premise_insert(self):
+        premis = self.premise.toPlainText()
+        c_manager.insert_premise(premis)
+
+    # 条件/前提删除
+    def premise_delete(self):
+        premise_id = self.premise.toPlainText()
+        try:
+            c_manager.delete_premise(int(premise_id))
+        except:
+            print("delete failed")
+
+    # 条件/前提更新
+    def premise_update(self):
+        update_content = self.premise.toPlainText()
+        try:
+            id, content = update_content.split(',')
+            c_manager.update_premise(id, content)
+        except:
+            print("update failed!")
+
+    # 结论插入
+    def conclusion_insert(self):
+        conclusion = self.conclusion.toPlainText()
+        c_manager.insert_conclusion(conclusion)
+
+    # 结论删除
+    def conclusion_delete(self):
+        conclusion_id = self.conclusion.toPlainText()
+        try:
+            c_manager.delete_conclusion(int(conclusion_id))
+        except:
+            print("delete failed")
+
+    # 结论更新
+    def conclusion_update(self):
+        update_content = self.conclusion.toPlainText()
+        try:
+            id, content = update_content.split(',')
+            c_manager.update_conclusion(id, content)
+        except:
+            print("update failed!")
+
+    # 可信度知识插入
+    def credit_insert(self):
+        premise_id = self.premise.toPlainText()
+        conclusion_id = self.conclusion.toPlainText()
+        pre_cred = self.CF.toPlainText()
+        con_cred = self.lada.toPlainText()
+        try:
+            c_manager.insert_credit_knowledge(premise_id, conclusion_id, pre_cred, con_cred)
+            self.credit_show()
+        except:
+            print("insert credit knowledge failed!")
+
+    # 可信度知识删除
+    def credit_delete(self):
+        credit_id = self.credit_id.toPlainText()
+        try:
+            c_manager.delete_credit_knowledge(int(credit_id))
+            self.credit_show()
+        except:
+            print("delete credit knowledge failed!")
+
+    # 可信度知识修改
+    def credit_update(self):
+        credit_id = self.credit_id.toPlainText()
+        premise_id = self.premise.toPlainText()
+        conclusion_id = self.conclusion.toPlainText()
+        pre_cred = self.CF.toPlainText()
+        con_cred = self.lada.toPlainText()
+        try:
+            c_manager.update_credit_knowledge(credit_id, premise_id, conclusion_id, pre_cred, con_cred)
+            self.credit_show()
+        except:
+            print("update credit knowledge failed!")
+
+    # 模糊知识显示
+    def fuzzy_show(self):
+        fuzzy_knowledge = f_manager.get_fuzzy_knowledge()
+        self.tableWidget_3.setRowCount(len(fuzzy_knowledge))
+        index_i, index_j = -1, -1
+        for i in fuzzy_knowledge:
+            index_i += 1
+            index_j = -1
+            for j in fuzzy_knowledge[i]:
+                index_j += 1
+                item = QTableWidgetItem(str(fuzzy_knowledge[i][j]))
+                if j == 'set_id_a' or j == 'set_id_b':
+                    item = f_manager.get_fuzzy_set_name(int(fuzzy_knowledge[i][j]))
+                    item = QTableWidgetItem(str(item))
+                self.tableWidget_3.setItem(index_i, index_j, item)
+
+    def fuzzy_insert(self):
+        fuzzy_class = self.fuzzy_class.toPlainText()
+        fuzzy_a = self.fuzzy_a.toPlainText()
+        fuzzy_b = self.fuzzy_b.toPlainText()
+        lamb = self.fuzzy_lambda.toPlainText()
+        try:
+            f_manager.insert_fuzzy_knowledge(int(fuzzy_class), lamb, int(fuzzy_a), int(fuzzy_b))
+            self.fuzzy_show()
+        except:
+            print("insert fuzzy knowledge failed!")
+
+    def fuzzy_delete(self):
+        id = self.fuzzy_id.toPlainText()
+        try:
+            f_manager.delete_fuzzy_knowledge(int(id))
+            self.fuzzy_show()
+        except:
+            print("delete fuzzy knowledge failed!")
+
+    def fuzzy_update(self):
+        id = self.fuzzy_id.toPlainText()
+        fuzzy_class = self.fuzzy_class.toPlainText()
+        fuzzy_a = self.fuzzy_a.toPlainText()
+        fuzzy_b = self.fuzzy_b.toPlainText()
+        lamb = self.fuzzy_lambda.toPlainText()
+        try:
+            f_manager.update_fuzzy_knowledge(int(id), int(fuzzy_class), lamb, int(fuzzy_a), int(fuzzy_b))
+            self.fuzzy_show()
+        except:
+            print("update fuzzy knowledge failed!")
+
+    def fuzzy_set_insert(self):
+        fuzzy_set = self.fuzzy_a.toPlainText()
+        try:
+            f_manager.insert_fuzzy_set(fuzzy_set)
+        except:
+            print("insert fuzzy set failed!")
+
+    def fuzzy_set_delete(self):
+        id = self.fuzzy_a.toPlainText()
+        try:
+            f_manager.delete_fuzzy_set(int(id))
+        except:
+            print("delete fuzzy set failed!")
+
+    def fuzzy_set_update(self):
+        fuzzy_set = self.fuzzy_a.toPlainText()
+        try:
+            id, content = fuzzy_set.split(',')
+            f_manager.update_fuzzy_set(int(id), content)
+        except:
+            print("update fuzzy_set failed!")
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     myWin = MyMainForm()
+    myWin.credit_show()
+    myWin.fuzzy_show()
     myWin.show()
     sys.exit(app.exec_())
