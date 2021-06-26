@@ -3,6 +3,13 @@ class credit_manager:
     def __init__(self,db):
         self.conn = db.conn
     # Table premise {
+    def get_premise_id_by_name(self,premise_name):
+        premise = self.get_premise()
+        for x in premise.keys():
+            if premise[x] == premise_name:
+                return x
+        self.insert_premise(premise_name)
+        return self.get_premise_id_by_name(premise_name)
     def get_premise_by_id(self,premise_id):
         premise = self.get_premise()
         return premise[premise_id]
@@ -33,6 +40,13 @@ class credit_manager:
         self.reload_conclusion()
     # Table premise }
     # Table conclusion {
+    def get_conclusion_id_by_name(self,conclusion_name):
+        conclusion = self.get_conclusion()
+        for x in conclusion.keys():
+            if conclusion[x] == conclusion_name:
+                return x
+        self.insert_conclusion(conclusion_name)
+        return self.get_conclusion_id_by_name(conclusion_name)
     def get_conclusion_by_id(self,conclusion_id):
         conclusion = self.get_conclusion()
         return conclusion[conclusion_id]

@@ -42,12 +42,6 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
         self.set_WE_Light(0)
         self.data_from_dpm = True
         # 可信度知识相关
-        self.premiseInsert.clicked.connect(self.premise_insert)
-        self.premiseDelete.clicked.connect(self.premise_delete)
-        self.premiseUpdate.clicked.connect(self.premise_update)
-        self.conclusionInsert.clicked.connect(self.conclusion_insert)
-        self.conclusionDelete.clicked.connect(self.conclusion_delete)
-        self.conclusionUpdate.clicked.connect(self.conclusion_update)
         self.creditInsert.clicked.connect(self.credit_insert)
         self.creditDelete.clicked.connect(self.credit_delete)
         self.creditUpdate.clicked.connect(self.credit_update)
@@ -252,54 +246,10 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
                     item = QTableWidgetItem(str(item))
                 self.tableWidget.setItem(index_i, index_j, item)
 
-    # 条件/前提插入
-    def premise_insert(self):
-        premis = self.premise.toPlainText()
-        c_manager.insert_premise(premis)
-
-    # 条件/前提删除
-    def premise_delete(self):
-        premise_id = self.premise.toPlainText()
-        try:
-            c_manager.delete_premise(int(premise_id))
-        except:
-            print("delete failed")
-
-    # 条件/前提更新
-    def premise_update(self):
-        update_content = self.premise.toPlainText()
-        try:
-            id, content = update_content.split(',')
-            c_manager.update_premise(id, content)
-        except:
-            print("update failed!")
-
-    # 结论插入
-    def conclusion_insert(self):
-        conclusion = self.conclusion.toPlainText()
-        c_manager.insert_conclusion(conclusion)
-
-    # 结论删除
-    def conclusion_delete(self):
-        conclusion_id = self.conclusion.toPlainText()
-        try:
-            c_manager.delete_conclusion(int(conclusion_id))
-        except:
-            print("delete failed")
-
-    # 结论更新
-    def conclusion_update(self):
-        update_content = self.conclusion.toPlainText()
-        try:
-            id, content = update_content.split(',')
-            c_manager.update_conclusion(id, content)
-        except:
-            print("update failed!")
-
     # 可信度知识插入
     def credit_insert(self):
-        premise_id = self.premise.toPlainText()
-        conclusion_id = self.conclusion.toPlainText()
+        premise_id = c_manager.get_premise_id_by_name(self.premise.toPlainText())
+        conclusion_id = c_manager.get_conclusion_id_by_name(self.conclusion.toPlainText())
         pre_cred = self.CF.toPlainText()
         con_cred = self.lada.toPlainText()
         try:
@@ -320,8 +270,8 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
     # 可信度知识修改
     def credit_update(self):
         credit_id = self.credit_id.toPlainText()
-        premise_id = self.premise.toPlainText()
-        conclusion_id = self.conclusion.toPlainText()
+        premise_id = c_manager.get_premise_id_by_name(self.premise.toPlainText())
+        conclusion_id = c_manager.get_conclusion_id_by_name(self.conclusion.toPlainText())
         pre_cred = self.CF.toPlainText()
         con_cred = self.lada.toPlainText()
         try:
