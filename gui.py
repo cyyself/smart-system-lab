@@ -51,6 +51,7 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
         self.creditInsert.clicked.connect(self.credit_insert)
         self.creditDelete.clicked.connect(self.credit_delete)
         self.creditUpdate.clicked.connect(self.credit_update)
+        self.tableWidget.clicked.connect(self.credit_knowledge_click)
         # 模糊知识相关
         self.fuzzyInsert.clicked.connect(self.fuzzy_insert)
         self.fuzzyDelete.clicked.connect(self.fuzzy_delete)
@@ -59,6 +60,7 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
         self.fuzzySetDelete.clicked.connect(self.fuzzy_set_delete)
         self.fuzzySetUpdate.clicked.connect(self.fuzzy_set_update)
         self.fuzzySetShow.clicked.connect(self.fuzzy_set_show)
+        self.tableWidget_3.clicked.connect(self.fuzzy_knowledge_click)
         self.sim_log = []
         self.dpm_log = []
         self.sim_fim = fuzzy_infer_machine(db)
@@ -328,6 +330,24 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
         except:
             print("update credit knowledge failed!")
 
+    def credit_knowledge_click(self,index):
+        credit_knowledge = c_manager.get_credit_knowledge()
+        index_i = 0
+        for i in credit_knowledge:
+            if index.row() == index_i:
+                for j in credit_knowledge[i]:
+                    if j == 'credit_id':
+                        self.credit_id.setText(str(credit_knowledge[i][j]))
+                    elif j == 'premise_id':
+                        self.premise.setText(c_manager.get_premise_by_id(credit_knowledge[i][j]))
+                    elif j == 'conclusion_id':
+                        self.conclusion.setText(c_manager.get_conclusion_by_id(credit_knowledge[i][j]))
+                    elif j == 'pre_cred':
+                        self.CF.setText(str(credit_knowledge[i][j]))
+                    elif j == 'con_cred':
+                        self.lada.setText(str(credit_knowledge[i][j]))
+            index_i += 1
+
     # 模糊知识显示
     def fuzzy_show(self):
         fuzzy_knowledge = f_manager.get_fuzzy_knowledge()
@@ -414,6 +434,24 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
             plt.plot(x,y,'b^-')
             plt.legend()
             plt.show()
+    
+    def fuzzy_knowledge_click(self,index):
+        fuzzy_knowledge = f_manager.get_fuzzy_knowledge()
+        index_i = 0
+        for i in fuzzy_knowledge:
+            if index.row() == index_i:
+                for j in fuzzy_knowledge[i]:
+                    if j == 'fuzzy_id':
+                        self.fuzzy_id.setText(str(fuzzy_knowledge[i][j]))
+                    elif j == 'set_id_a':
+                        self.fuzzy_a.setText(f_manager.get_fuzzy_set_name(fuzzy_knowledge[i][j]))
+                    elif j == 'set_id_b':
+                        self.fuzzy_b.setText(f_manager.get_fuzzy_set_name(fuzzy_knowledge[i][j]))
+                    elif j == 'fuzzy_class':
+                        self.fuzzy_class.setText(str(fuzzy_knowledge[i][j]))
+                    elif j == 'lambda':
+                        self.fuzzy_lambda.setText(str(fuzzy_knowledge[i][j]))
+            index_i += 1
 
     def set_NS_Light(self,status=0):
         if status == 0:
